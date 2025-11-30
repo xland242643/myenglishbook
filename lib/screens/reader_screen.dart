@@ -146,7 +146,72 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     });
   }
 
+  Future<void> _processCapture(String text) async {
+    if (!mounted) return;
+
+    // 1. Initial Feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Translating and saving...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // 2. Get CFI (Safe)
+    String cfi = '';
+    try {
+      cfi = _epubController.generateEpubCfi() ?? '';
+    } catch (e) {
+      debugPrint('Error generating CFI: $e');
+      cfi = 'epubcfi(/0!/0)';
+    }
+
+    try {
+      // 3. Translate
+      final translation = await ref.read(aiServiceProvider).translate(text);
+      
+      // 4. Save to DB
+      final db = ref.read(databaseProvider);
+      final cardId = await db.createCard(CardsCompanion(
+         note: drift.Value('Auto Captured'),
+      ));
+
+      await db.into(db.capturedItems).insert(CapturedItemsCompanion(
+          bookId: drift.Value(widget.book.id),
+          cardId: drift.Value(cardId),
+         content: drift.Value(text),
+         translation: drift.Value(translation),
+         locationCfi: drift.Value(cfi.isEmpty ? 'epubcfi(/0!/0)' : cfi),
+      ));
+      
+      // 5. Reload & Feedback
+      if (mounted) {
+         _reloadBook();
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+             content: Text('Saved! Translation: $translation'),
+             duration: const Duration(seconds: 3),
+           ),
+         );
+      }
+
+    } catch (e) {
+       debugPrint('Capture process failed: $e');
+       if (mounted) {
+         showDialog(
+           context: context,
+           builder: (ctx) => AlertDialog(
+             title: const Text('Capture Failed'),
+             content: Text('$e'),
+             actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+           ),
+         );
+       }
+    }
+  }
+
   Future<void> _showCaptureDialog(String text) async {
+    // ... (Kept for reference or future manual mode, but currently unused in main flow)
     String cfi = '';
     try {
       cfi = _epubController.generateEpubCfi() ?? '';
@@ -270,19 +335,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                   debugPrint('Clipboard read error: $e');
                                 }
  
-                                // 6. Open Dialog
+                                // 6. Process Capture (Auto Translate & Save)
                                 // Use 'mounted' (State property) instead of context.mounted to be safer
                                 // Use 'context' (State property) which is stable
                                 if (mounted) {
-                                   debugPrint('Opening dialog with text: "$capturedText"');
+                                   debugPrint('Processing capture for text: "$capturedText"');
                                    if (capturedText.isEmpty) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(content: Text('Auto-copy failed. Please paste manually.')),
                                       );
+                                   } else {
+                                      await _processCapture(capturedText);
                                    }
-                                   await _showCaptureDialog(capturedText);
                                 } else {
-                                   debugPrint('Skipping dialog: Widget not mounted after delay.');
+                                   debugPrint('Skipping capture: Widget not mounted after delay.');
                                 }
                               } catch (e) {
                                 debugPrint('CRITICAL ERROR in Capture Button: $e');
