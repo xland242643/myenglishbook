@@ -74,6 +74,7 @@ class AppDatabase extends _$AppDatabase {
   
   Future<int> createCard(CardsCompanion entry) => into(cards).insert(entry);
   Future<int> addCapturedItem(CapturedItemsCompanion entry) => into(capturedItems).insert(entry);
+  Future<void> deleteCapturedItem(int id) => (delete(capturedItems)..where((t) => t.id.equals(id))).go();
   
   Future<void> deleteBook(int id) => (delete(books)..where((t) => t.id.equals(id))).go();
 }
