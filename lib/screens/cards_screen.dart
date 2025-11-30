@@ -1,10 +1,8 @@
-import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart' hide Card;
 import 'package:flutter/material.dart' as material show Card;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/database.dart';
 import '../providers/database_provider.dart';
-import 'reader_screen.dart';
 
 class CardWithDetails {
   final CapturedItem item;

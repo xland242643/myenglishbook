@@ -12,8 +12,36 @@ class AiService {
   Future<String> translate(String text, {String targetLang = 'zh'}) async {
     if (text.trim().isEmpty) return '';
     
-    debugPrint('Translating via Google: $text');
-    return await _callGoogleTranslate(text, targetLang);
+    debugPrint('Translating via Parallel Engines: $text');
+    
+    // Race multiple engines concurrently to speed up result
+    // First one to return a non-empty valid string wins.
+    final googleFuture = _callGoogleTranslate(text, targetLang);
+    final myMemoryFuture = _callMyMemoryTranslate(text, targetLang == 'zh' ? 'zh-CN' : targetLang);
+    
+    try {
+      // Create a race
+      final result = await Future.any([
+        googleFuture.then((res) => res.startsWith('[') ? Future.error('Google Failed') : res),
+        myMemoryFuture.then((res) => res.isEmpty ? Future.error('MyMemory Failed') : res),
+      ]);
+      return result as String;
+    } catch (e) {
+      // If the winner failed (e.g. error thrown), wait for the others or fallback
+      // Simple robust approach: await both safely
+      final results = await Future.wait([
+        googleFuture,
+        myMemoryFuture,
+      ]);
+      
+      final googleRes = results[0];
+      final memoryRes = results[1];
+      
+      if (!googleRes.startsWith('[')) return googleRes;
+      if (memoryRes.isNotEmpty) return memoryRes;
+      
+      return '[Translation Failed] $text';
+    }
   }
 
   Future<String> _callGoogleTranslate(String text, String target) async {
@@ -24,22 +52,17 @@ class AiService {
        final translation = await _googleTranslator.translate(text, to: target == 'zh' ? 'zh-cn' : target);
        return translation.text;
     } catch (e) {
-       debugPrint('Google Translation error: $e');
+       // debugPrint('Google Translation error: $e'); // Reduce noise
        // Final fallback attempt using translate.google.cn if .com failed
        try {
           _googleTranslator.baseUrl = 'translate.google.cn';
           final translation = await _googleTranslator.translate(text, to: target == 'zh' ? 'zh-cn' : target);
           return translation.text;
        } catch (e2) {
-          debugPrint('Google CN Translation error: $e2');
+          // debugPrint('Google CN Translation error: $e2');
        }
        
-       // Fallback to MyMemory as a backup since Google failed
-       final myMemoryResult = await _callMyMemoryTranslate(text, target == 'zh' ? 'zh-CN' : target);
-       if (myMemoryResult.isNotEmpty) return myMemoryResult;
-
-       await Future.delayed(const Duration(seconds: 1));
-       return '[Translation Failed] $text';
+       return '[Translation Failed]';
     }
   }
 

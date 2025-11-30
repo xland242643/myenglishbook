@@ -31,6 +31,7 @@ class CapturedItems extends Table {
   TextColumn get translation => text().nullable()();
   TextColumn get locationCfi => text()(); // Location in book to jump back
   TextColumn get chapterName => text().nullable()();
+  IntColumn get chapterIndex => integer().nullable()(); // Explicit chapter index for reliable jumps
   DateTimeColumn get capturedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
@@ -66,7 +67,21 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 2) {
+          await m.addColumn(capturedItems, capturedItems.chapterIndex);
+        }
+      },
+    );
+  }
   
   // Helpers
   Future<int> addBook(BooksCompanion entry) => into(books).insert(entry);

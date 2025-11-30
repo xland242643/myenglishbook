@@ -854,6 +854,17 @@ class $CapturedItemsTable extends CapturedItems
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _chapterIndexMeta = const VerificationMeta(
+    'chapterIndex',
+  );
+  @override
+  late final GeneratedColumn<int> chapterIndex = GeneratedColumn<int>(
+    'chapter_index',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _capturedAtMeta = const VerificationMeta(
     'capturedAt',
   );
@@ -875,6 +886,7 @@ class $CapturedItemsTable extends CapturedItems
     translation,
     locationCfi,
     chapterName,
+    chapterIndex,
     capturedAt,
   ];
   @override
@@ -943,6 +955,15 @@ class $CapturedItemsTable extends CapturedItems
         ),
       );
     }
+    if (data.containsKey('chapter_index')) {
+      context.handle(
+        _chapterIndexMeta,
+        chapterIndex.isAcceptableOrUnknown(
+          data['chapter_index']!,
+          _chapterIndexMeta,
+        ),
+      );
+    }
     if (data.containsKey('captured_at')) {
       context.handle(
         _capturedAtMeta,
@@ -986,6 +1007,10 @@ class $CapturedItemsTable extends CapturedItems
         DriftSqlType.string,
         data['${effectivePrefix}chapter_name'],
       ),
+      chapterIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chapter_index'],
+      ),
       capturedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}captured_at'],
@@ -1007,6 +1032,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
   final String? translation;
   final String locationCfi;
   final String? chapterName;
+  final int? chapterIndex;
   final DateTime capturedAt;
   const CapturedItem({
     required this.id,
@@ -1016,6 +1042,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
     this.translation,
     required this.locationCfi,
     this.chapterName,
+    this.chapterIndex,
     required this.capturedAt,
   });
   @override
@@ -1033,6 +1060,9 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
     map['location_cfi'] = Variable<String>(locationCfi);
     if (!nullToAbsent || chapterName != null) {
       map['chapter_name'] = Variable<String>(chapterName);
+    }
+    if (!nullToAbsent || chapterIndex != null) {
+      map['chapter_index'] = Variable<int>(chapterIndex);
     }
     map['captured_at'] = Variable<DateTime>(capturedAt);
     return map;
@@ -1053,6 +1083,9 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
       chapterName: chapterName == null && nullToAbsent
           ? const Value.absent()
           : Value(chapterName),
+      chapterIndex: chapterIndex == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chapterIndex),
       capturedAt: Value(capturedAt),
     );
   }
@@ -1070,6 +1103,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
       translation: serializer.fromJson<String?>(json['translation']),
       locationCfi: serializer.fromJson<String>(json['locationCfi']),
       chapterName: serializer.fromJson<String?>(json['chapterName']),
+      chapterIndex: serializer.fromJson<int?>(json['chapterIndex']),
       capturedAt: serializer.fromJson<DateTime>(json['capturedAt']),
     );
   }
@@ -1084,6 +1118,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
       'translation': serializer.toJson<String?>(translation),
       'locationCfi': serializer.toJson<String>(locationCfi),
       'chapterName': serializer.toJson<String?>(chapterName),
+      'chapterIndex': serializer.toJson<int?>(chapterIndex),
       'capturedAt': serializer.toJson<DateTime>(capturedAt),
     };
   }
@@ -1096,6 +1131,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
     Value<String?> translation = const Value.absent(),
     String? locationCfi,
     Value<String?> chapterName = const Value.absent(),
+    Value<int?> chapterIndex = const Value.absent(),
     DateTime? capturedAt,
   }) => CapturedItem(
     id: id ?? this.id,
@@ -1105,6 +1141,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
     translation: translation.present ? translation.value : this.translation,
     locationCfi: locationCfi ?? this.locationCfi,
     chapterName: chapterName.present ? chapterName.value : this.chapterName,
+    chapterIndex: chapterIndex.present ? chapterIndex.value : this.chapterIndex,
     capturedAt: capturedAt ?? this.capturedAt,
   );
   CapturedItem copyWithCompanion(CapturedItemsCompanion data) {
@@ -1122,6 +1159,9 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
       chapterName: data.chapterName.present
           ? data.chapterName.value
           : this.chapterName,
+      chapterIndex: data.chapterIndex.present
+          ? data.chapterIndex.value
+          : this.chapterIndex,
       capturedAt: data.capturedAt.present
           ? data.capturedAt.value
           : this.capturedAt,
@@ -1138,6 +1178,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
           ..write('translation: $translation, ')
           ..write('locationCfi: $locationCfi, ')
           ..write('chapterName: $chapterName, ')
+          ..write('chapterIndex: $chapterIndex, ')
           ..write('capturedAt: $capturedAt')
           ..write(')'))
         .toString();
@@ -1152,6 +1193,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
     translation,
     locationCfi,
     chapterName,
+    chapterIndex,
     capturedAt,
   );
   @override
@@ -1165,6 +1207,7 @@ class CapturedItem extends DataClass implements Insertable<CapturedItem> {
           other.translation == this.translation &&
           other.locationCfi == this.locationCfi &&
           other.chapterName == this.chapterName &&
+          other.chapterIndex == this.chapterIndex &&
           other.capturedAt == this.capturedAt);
 }
 
@@ -1176,6 +1219,7 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
   final Value<String?> translation;
   final Value<String> locationCfi;
   final Value<String?> chapterName;
+  final Value<int?> chapterIndex;
   final Value<DateTime> capturedAt;
   const CapturedItemsCompanion({
     this.id = const Value.absent(),
@@ -1185,6 +1229,7 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
     this.translation = const Value.absent(),
     this.locationCfi = const Value.absent(),
     this.chapterName = const Value.absent(),
+    this.chapterIndex = const Value.absent(),
     this.capturedAt = const Value.absent(),
   });
   CapturedItemsCompanion.insert({
@@ -1195,6 +1240,7 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
     this.translation = const Value.absent(),
     required String locationCfi,
     this.chapterName = const Value.absent(),
+    this.chapterIndex = const Value.absent(),
     this.capturedAt = const Value.absent(),
   }) : bookId = Value(bookId),
        content = Value(content),
@@ -1207,6 +1253,7 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
     Expression<String>? translation,
     Expression<String>? locationCfi,
     Expression<String>? chapterName,
+    Expression<int>? chapterIndex,
     Expression<DateTime>? capturedAt,
   }) {
     return RawValuesInsertable({
@@ -1217,6 +1264,7 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
       if (translation != null) 'translation': translation,
       if (locationCfi != null) 'location_cfi': locationCfi,
       if (chapterName != null) 'chapter_name': chapterName,
+      if (chapterIndex != null) 'chapter_index': chapterIndex,
       if (capturedAt != null) 'captured_at': capturedAt,
     });
   }
@@ -1229,6 +1277,7 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
     Value<String?>? translation,
     Value<String>? locationCfi,
     Value<String?>? chapterName,
+    Value<int?>? chapterIndex,
     Value<DateTime>? capturedAt,
   }) {
     return CapturedItemsCompanion(
@@ -1239,6 +1288,7 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
       translation: translation ?? this.translation,
       locationCfi: locationCfi ?? this.locationCfi,
       chapterName: chapterName ?? this.chapterName,
+      chapterIndex: chapterIndex ?? this.chapterIndex,
       capturedAt: capturedAt ?? this.capturedAt,
     );
   }
@@ -1267,6 +1317,9 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
     if (chapterName.present) {
       map['chapter_name'] = Variable<String>(chapterName.value);
     }
+    if (chapterIndex.present) {
+      map['chapter_index'] = Variable<int>(chapterIndex.value);
+    }
     if (capturedAt.present) {
       map['captured_at'] = Variable<DateTime>(capturedAt.value);
     }
@@ -1283,6 +1336,7 @@ class CapturedItemsCompanion extends UpdateCompanion<CapturedItem> {
           ..write('translation: $translation, ')
           ..write('locationCfi: $locationCfi, ')
           ..write('chapterName: $chapterName, ')
+          ..write('chapterIndex: $chapterIndex, ')
           ..write('capturedAt: $capturedAt')
           ..write(')'))
         .toString();
@@ -3136,6 +3190,7 @@ typedef $$CapturedItemsTableCreateCompanionBuilder =
       Value<String?> translation,
       required String locationCfi,
       Value<String?> chapterName,
+      Value<int?> chapterIndex,
       Value<DateTime> capturedAt,
     });
 typedef $$CapturedItemsTableUpdateCompanionBuilder =
@@ -3147,6 +3202,7 @@ typedef $$CapturedItemsTableUpdateCompanionBuilder =
       Value<String?> translation,
       Value<String> locationCfi,
       Value<String?> chapterName,
+      Value<int?> chapterIndex,
       Value<DateTime> capturedAt,
     });
 
@@ -3226,6 +3282,11 @@ class $$CapturedItemsTableFilterComposer
 
   ColumnFilters<String> get chapterName => $composableBuilder(
     column: $table.chapterName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get chapterIndex => $composableBuilder(
+    column: $table.chapterIndex,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3315,6 +3376,11 @@ class $$CapturedItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get chapterIndex => $composableBuilder(
+    column: $table.chapterIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get capturedAt => $composableBuilder(
     column: $table.capturedAt,
     builder: (column) => ColumnOrderings(column),
@@ -3394,6 +3460,11 @@ class $$CapturedItemsTableAnnotationComposer
 
   GeneratedColumn<String> get chapterName => $composableBuilder(
     column: $table.chapterName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get chapterIndex => $composableBuilder(
+    column: $table.chapterIndex,
     builder: (column) => column,
   );
 
@@ -3484,6 +3555,7 @@ class $$CapturedItemsTableTableManager
                 Value<String?> translation = const Value.absent(),
                 Value<String> locationCfi = const Value.absent(),
                 Value<String?> chapterName = const Value.absent(),
+                Value<int?> chapterIndex = const Value.absent(),
                 Value<DateTime> capturedAt = const Value.absent(),
               }) => CapturedItemsCompanion(
                 id: id,
@@ -3493,6 +3565,7 @@ class $$CapturedItemsTableTableManager
                 translation: translation,
                 locationCfi: locationCfi,
                 chapterName: chapterName,
+                chapterIndex: chapterIndex,
                 capturedAt: capturedAt,
               ),
           createCompanionCallback:
@@ -3504,6 +3577,7 @@ class $$CapturedItemsTableTableManager
                 Value<String?> translation = const Value.absent(),
                 required String locationCfi,
                 Value<String?> chapterName = const Value.absent(),
+                Value<int?> chapterIndex = const Value.absent(),
                 Value<DateTime> capturedAt = const Value.absent(),
               }) => CapturedItemsCompanion.insert(
                 id: id,
@@ -3513,6 +3587,7 @@ class $$CapturedItemsTableTableManager
                 translation: translation,
                 locationCfi: locationCfi,
                 chapterName: chapterName,
+                chapterIndex: chapterIndex,
                 capturedAt: capturedAt,
               ),
           withReferenceMapper: (p0) => p0
